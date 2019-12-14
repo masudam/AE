@@ -6,9 +6,10 @@ from PIL import Image
 import cv2
 import argparse
 import os
-from armEnv import armEnv
+from Env import armEnv
 
-NUM = 2
+# (NUM -1)^2　個のデータができる
+NUM = 21
 
 def my_makedirs(path):
     if not os.path.isdir(path):
@@ -21,7 +22,7 @@ def main():
     args = parser.parse_args()
     clock = pygame.time.Clock()
 
-    dir_name="./img_data"
+    dir_name="../img_data"
 
     if args.isSave:
         my_makedirs(dir_name)
@@ -50,6 +51,11 @@ def main():
 
     img = cv2.imread("sampledata.png", cv2.IMREAD_GRAYSCALE)
     print(img.shape)
+    print(img)
+    # fileの数を調べる
+    # files = os.listdir(dir_name)
+    # count = len(files)
+    # print(count)
     # cv2.imshow('image', img)
     # cv2.waitKey(0)
     # cv2.destroyAllWindows()

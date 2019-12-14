@@ -15,15 +15,14 @@ from __future__ import division, print_function, absolute_import
 import tensorflow as tf
 import numpy as np
 import matplotlib.pyplot as plt
+import datetime
+import os
 
-# Import MNIST data
-# from tensorflow.examples.tutorials.mnist import input_data
-# mnist = input_data.read_data_sets("/tmp/data/", one_hot=True)
 
 # Training Parameters
 learning_rate = 0.005
-num_steps = 30000
-batch_size = 256
+num_steps = 3
+batch_size = 100
 
 display_step = 1000
 
@@ -76,7 +75,7 @@ def decoder(x):
     layer_2 = tf.nn.sigmoid(tf.add(tf.matmul(layer_1, weights['decoder_h2']),
                                    biases['decoder_b2']))
     # Decoder Hidden layer with sigmoid activation #3
-    layer_1 = tf.nn.sigmoid(tf.add(tf.matmul(x, weights['decoder_h3']),
+    layer_3 = tf.nn.sigmoid(tf.add(tf.matmul(layer_2, weights['decoder_h3']),
                                    biases['decoder_b3']))
     return layer_3
 
@@ -96,6 +95,24 @@ optimizer = tf.train.RMSPropOptimizer(learning_rate).minimize(loss)
 # Initialize the variables (i.e. assign their default value)
 init = tf.global_variables_initializer()
 
+# 画像をとってくる
+def make_img(sess):
+    dir_name="../img_data"
+    #fileの数を調べる
+    files = os.listdir(dir_name)
+    count = len(files)
+    imgs = []
+    for i in range(count):
+        img_name = dir_name + "/{}.png".format(str(i).zfill(4))
+        img = tf.read_file(img_name)
+        img = tf.image.decode_image(img, channels=1)
+        img = tf.reshape(img, [-1])
+        img = tf.cast(img,dtype=np.float32)
+        img = img/255.0 # 正規化
+        img_val = sess.run(img)
+        imgs.append(img_val)
+    return np.asarray(imgs, dtype=np.float32)
+
 # Start Training
 # Start a new TF session
 with tf.Session() as sess:
@@ -103,13 +120,16 @@ with tf.Session() as sess:
     # Run the initializer
     sess.run(init)
     saver = tf.train.Saver(max_to_keep=100)
+    images = make_img(sess)
 
     # Training
     for i in range(1, num_steps+1):
         # Prepare Data
         # Get the next batch of MNIST data (only images are needed, not labels)
         #ここにバッチサイズのデータを渡す
-        batch_x, _ = mnist.train.next_batch(batch_size)
+        # batch_x, _ = mnist.train.next_batch(batch_size)
+        next_b = i % 4 + 1
+        batch_x = images[(next_b-1)*100:next_b*100]
 
         # Run optimization op (backprop) and cost op (to get loss value)
         _, l = sess.run([optimizer, loss], feed_dict={X: batch_x})
@@ -117,7 +137,13 @@ with tf.Session() as sess:
         if i % display_step == 0 or i == 1:
             print('Step %i: Minibatch Loss: %f' % (i, l))
 
-    saver.save(sess, logdir + '/my-model')
+
+    def my_makedirs(path):
+        if not os.path.isdir(path):
+            os.makedirs(path)
+    dir_path = datetime.datetime.today().strftime("../models/%Y_%m_%d_%H_%M")
+    my_makedirs(dir_path)
+    saver.save(sess, dir_path + '/my-model.ckpt')
 
 
 
