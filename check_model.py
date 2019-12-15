@@ -31,7 +31,7 @@ def make_img(sess):
 
 if __name__ == "__main__":
     inp = sys.argv
-    model_dir = "../" + inp[1] + '/my-model.ckpt'
+    model_dir = "../models/" + inp[1] + '/my-model.ckpt'
     with tf.Session() as sess:
         #まずはmodelを読み込む
         saver = tf.train.import_meta_graph(model_dir+".meta")
