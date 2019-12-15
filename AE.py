@@ -148,39 +148,3 @@ with tf.Session() as sess:
     dir_path = datetime.datetime.today().strftime("../models/%Y_%m_%d_%H_%M")
     my_makedirs(dir_path)
     saver.save(sess, dir_path + '/my-model.ckpt')
-
-
-
-
-
-    # Testing
-    # Encode and decode images from test set and visualize their reconstruction.
-    # n = 4
-    # canvas_orig = np.empty((28 * n, 28 * n))
-    # canvas_recon = np.empty((28 * n, 28 * n))
-    # for i in range(n):
-    #     # MNIST test set
-    #     batch_x, _ = mnist.test.next_batch(n)
-    #     # Encode and decode the digit image
-    #     g = sess.run(decoder_op, feed_dict={X: batch_x})
-
-    #     # Display original images
-    #     for j in range(n):
-    #         # Draw the original digits
-    #         canvas_orig[i * 28:(i + 1) * 28, j * 28:(j + 1) * 28] = \
-    #             batch_x[j].reshape([28, 28])
-    #     # Display reconstructed images
-    #     for j in range(n):
-    #         # Draw the reconstructed digits
-    #         canvas_recon[i * 28:(i + 1) * 28, j * 28:(j + 1) * 28] = \
-    #             g[j].reshape([28, 28])
-
-    # print("Original Images")
-    # plt.figure(figsize=(n, n))
-    # plt.imshow(canvas_orig, origin="upper", cmap="gray")
-    # plt.show()
-
-    # print("Reconstructed Images")
-    # plt.figure(figsize=(n, n))
-    # plt.imshow(canvas_recon, origin="upper", cmap="gray")
-    # plt.show()
