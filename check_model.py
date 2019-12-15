@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import datetime
 import os
 import time
+import sys
 
 
 # 画像をとってくる
