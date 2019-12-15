@@ -17,11 +17,12 @@ import numpy as np
 import matplotlib.pyplot as plt
 import datetime
 import os
+import time
 
 
 # Training Parameters
-learning_rate = 0.005
-num_steps = 3
+learning_rate = 0.002
+num_steps = 1000000
 batch_size = 100
 
 display_step = 1000
@@ -122,6 +123,8 @@ with tf.Session() as sess:
     saver = tf.train.Saver(max_to_keep=100)
     images = make_img(sess)
 
+    before = time.time()
+
     # Training
     for i in range(1, num_steps+1):
         # Prepare Data
@@ -135,7 +138,8 @@ with tf.Session() as sess:
         _, l = sess.run([optimizer, loss], feed_dict={X: batch_x})
         # Display logs per step
         if i % display_step == 0 or i == 1:
-            print('Step %i: Minibatch Loss: %f' % (i, l))
+            sec = time.time() - before
+            print('Step %i: Minibatch Loss: %f' % (i, l) + " and time is " + str(int(sec)))
 
 
     def my_makedirs(path):
