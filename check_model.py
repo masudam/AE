@@ -94,7 +94,7 @@ def make_img(sess):
     dir_name="../img_data"
     #fileの数を調べる
     files = os.listdir(dir_name)
-    count = len(files)
+    count = 20
     imgs = []
     for i in range(count):
         img_name = dir_name + "/{}.png".format(str(i).zfill(4))
@@ -133,20 +133,21 @@ if __name__ == "__main__":
         canvas_recon = np.empty((180 * n, 160 * n))
         print("prepare check...")
         for i in range(n):
-            batch_x = images[i*100:i*100+1]
+            #batch_x = images[i*100:i*100+1]
+            batch_x = images[0:4]
             # Encode and decode the digit image
             g = sess.run(decoder_op, feed_dict={X: batch_x})
 
             # Display original images
             for j in range(n):
                 # Draw the original digits
-                canvas_orig[i * 28:(i + 1) * 28, j * 28:(j + 1) * 28] = \
-                    batch_x[j].reshape([28, 28])
+                changed = batch_x[j].reshape([180, 160])
+                canvas_orig[i * 180:(i + 1) * 180, j * 160:(j + 1) * 160] = changed
             # Display reconstructed images
             for j in range(n):
                 # Draw the reconstructed digits
-                canvas_recon[i * 28:(i + 1) * 28, j * 28:(j + 1) * 28] = \
-                    g[j].reshape([28, 28])
+                changed = g[j].reshape([180, 160])
+                canvas_recon[i * 180:(i + 1) * 180, j * 160:(j + 1) * 160] = changed
 
         print("Original Images")
         plt.figure(figsize=(n, n))
