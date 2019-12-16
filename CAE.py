@@ -97,6 +97,8 @@ def make_img(sess):
         img = img/255.0 # 正規化
         img_val = sess.run(img)
         imgs.append(img_val)
+        if i % 10 == 0 :
+            print("{} done.".format(str(i)))
     return np.asarray(imgs, dtype=np.float32)
 
 # Start Training
