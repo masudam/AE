@@ -89,19 +89,18 @@ def make_img(sess):
     dir_name="../img_data"
     #fileの数を調べる
     files = os.listdir(dir_name)
-    count = 20
+    count = len(files)
     imgs = []
+    holder = tf.placeholder(tf.string)
+    img = tf.read_file(holder)
+    img = tf.image.decode_image(img, channels=1)
+    img = tf.reshape(img, [-1])
+    img = tf.cast(img,dtype=np.float32)
+    img = img/255.0 # 正規化
     for i in range(count):
         img_name = dir_name + "/{}.png".format(str(i).zfill(4))
-        img = tf.read_file(img_name)
-        img = tf.image.decode_image(img, channels=1)
-        img = tf.reshape(img, [-1])
-        img = tf.cast(img,dtype=np.float32)
-        img = img/255.0 # 正規化
-        img_val = sess.run(img)
+        img_val = sess.run(img, feed_dict={holder: img_name})
         imgs.append(img_val)
-        if i % 10 == 0 :
-            print("{} done.".format(str(i)))
     return np.asarray(imgs, dtype=np.float32)
 
 if __name__ == "__main__":

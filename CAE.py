@@ -9,7 +9,7 @@ import time
 
 
 
-class AE():
+class CAE():
     def __init__(self, learning_rate):
         # Training Parameters
         self.learning_rate = learning_rate
@@ -88,20 +88,17 @@ def make_img(sess):
     files = os.listdir(dir_name)
     count = len(files)
     imgs = []
+    holder = tf.placeholder(tf.string)
+    img = tf.read_file(holder)
+    img = tf.image.decode_image(img, channels=1)
+    img = tf.reshape(img, [-1])
+    img = tf.cast(img,dtype=np.float32)
+    img = img/255.0 # 正規化
     for i in range(count):
         img_name = dir_name + "/{}.png".format(str(i).zfill(4))
-        img = tf.read_file(img_name)
-        img = tf.image.decode_image(img, channels=1)
-        img = tf.reshape(img, [-1])
-        img = tf.cast(img,dtype=np.float32)
-        img = img/255.0 # 正規化
-        img_val = sess.run(img)
+        img_val = sess.run(img, feed_dict={holder: img_name})
         imgs.append(img_val)
-        if i % 10 == 0 :
-            print("{} done.".format(str(i)))
     return np.asarray(imgs, dtype=np.float32)
-
-
 
 if __name__ == "__main__":
     # Training Parameters
@@ -111,14 +108,16 @@ if __name__ == "__main__":
     learning_rate = 0.002
 
     with tf.Session() as sess:
-        model = AE(learning_rate = learning_rate)
+        model = CAE(learning_rate = learning_rate)
 
         # Run the initializer
         # Initialize the variables (i.e. assign their default value)
         init = tf.global_variables_initializer()
         sess.run(init)
         saver = tf.train.Saver(max_to_keep=100)
+        print("prepare data...")
         images = make_img(sess)
+        print("done.")
 
         before = time.time()
 
