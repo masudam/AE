@@ -115,6 +115,7 @@ if __name__ == "__main__":
         print("restore model...")
         model = AE()
         # saver = tf.train.import_meta_graph(model_dir+".meta")
+        saver = tf.train.Saver()
         saver.restore(sess, model_dir)
         print("done.")
 
@@ -132,7 +133,7 @@ if __name__ == "__main__":
             #batch_x = images[i*100:i*100+1]
             batch_x = images[0:4]
             # Encode and decode the digit image
-            g = sess.run(model.decoder_op, feed_dict={modelX: batch_x})
+            g = sess.run(model.decoder_op, feed_dict={model.X: batch_x})
 
             # Display original images
             for j in range(n):
