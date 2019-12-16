@@ -54,12 +54,19 @@ class AE():
         self.loss = self.calc_loss()
         self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate).minimize(self.loss)
 
+        tf.add_to_collection("X", self.X)
+        tf.add_to_collection("encoder", self.encoder_op)
+        tf.add_to_collection("en_decoder", self.decoder_op)
+        tf.add_to_collection("loss", self.loss)
+        tf.add_to_collection("optimizer", self.optimizer)
+
+
     def calc_loss(self):
         # Prediction
         y_pred = self.decoder_op
         # Targets (Labels) are the input data.
         y_true = self.X
-        # Define loss and optimizer, minimize the squared error
+        # Define loss
         loss = tf.reduce_mean(tf.pow(y_true - y_pred, 2))
         return loss
 

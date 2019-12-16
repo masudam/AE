@@ -15,34 +15,58 @@ class CAE():
         self.learning_rate = learning_rate
 
         # Network Parameters
-        self.num_hidden_1 = 1024 # 1st layer num features
-        self.num_hidden_2 = 512 # 2nd layer num features (the latent dim)
-        self.num_hidden_3 = 128
-        self.num_input = 28800 # MNIST data input (img shape: 180*160)
+        self.input = [None, 180, 160, 1] # data input (img shape: 180*160*1)
+        self.channel1 = 1
+        self.channel2 = 32
+        self.z_size = 200
+        self.fc_size = [None, self.input[1]/4, self.input[2]/4, self.channel2]
+        self.fc_prod = int(np.prod(self.fc_size[1:])) # 積
 
-        # tf Graph input (only pictures)
-        self.X = tf.placeholder("float", [None, self.num_input])
+        self.X = tf.placeholder("float", self.input)
+
         self.weights = {
-            'encoder_h1': tf.Variable(tf.random_normal([self.num_input, self.num_hidden_1])),
-            'encoder_h2': tf.Variable(tf.random_normal([self.num_hidden_1, self.num_hidden_2])),
-            'encoder_h3': tf.Variable(tf.random_normal([self.num_hidden_2, self.num_hidden_3])),
-            'decoder_h1': tf.Variable(tf.random_normal([self.num_hidden_3, self.num_hidden_2])),
-            'decoder_h2': tf.Variable(tf.random_normal([self.num_hidden_2, self.num_hidden_1])),
-            'decoder_h3': tf.Variable(tf.random_normal([self.num_hidden_1, self.num_input])),
+            'encoder_h1': tf.Variable(tf.random_normal([5, 5, self.channel1, self.channel2])),
+            'encoder_h2': tf.Variable(tf.random_normal([5, 5, self.channel2, self.channel2])),
+            'encoder_fc' : tf.Variable(tf.random_normal([self.fc_prod, self.z_size])),
+            'decoder_fc': tf.Variable(tf.random_normal([self.z_size, self.fc_prod])),
+            'decoder_h1': tf.Variable(tf.random_normal([5, 5, self.channel2, self.channel2])),
+            'decoder_h2': tf.Variable(tf.random_normal([5, 5, self.channel1, self.channel2])),
         }
         self.biases = {
-            'encoder_b1': tf.Variable(tf.random_normal([self.num_hidden_1])),
-            'encoder_b2': tf.Variable(tf.random_normal([self.num_hidden_2])),
-            'encoder_b3': tf.Variable(tf.random_normal([self.num_hidden_3])),
-            'decoder_b1': tf.Variable(tf.random_normal([self.num_hidden_2])),
-            'decoder_b2': tf.Variable(tf.random_normal([self.num_hidden_1])),
-            'decoder_b3': tf.Variable(tf.random_normal([self.num_input])),
+            'encoder_b1': tf.Variable(tf.random_normal([self.channel1])),
+            'encoder_b2': tf.Variable(tf.random_normal([self.channel2])),
+            'encoder_fc': tf.Variable(tf.random_normal([self.z_size])),
+            'decoder_fc': tf.Variable(tf.random_normal([self.fc_prod])),
+            'decoder_b1': tf.Variable(tf.random_normal([self.channel2])),
+            'decoder_b2': tf.Variable(tf.random_normal([self.channel1])),
         }
         # Construct model
         self.encoder_op = self.encoder(self.X)
         self.decoder_op = self.decoder(self.encoder_op)
         self.loss = self.calc_loss()
         self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate).minimize(self.loss)
+
+        tf.add_to_collection("X", self.X)
+        tf.add_to_collection("encoder", self.encoder_op)
+        tf.add_to_collection("en_decoder", self.decoder_op)
+        tf.add_to_collection("loss", self.loss)
+        tf.add_to_collection("optimizer", self.optimizer)
+
+    # Building the encoder
+    def encoder(self,x):
+        self.en_1 = tf.nn.relu(tf.nn.conv2d(x, self.weights['encoder_h1'], strides=[1, 2, 2, 1], padding='SAME') + self.biases['encoder_b1']) # 90*80*32
+        self.en_2 = tf.nn.relu(tf.nn.conv2d(self.en_1, self.weights['encoder_h2'], strides=[1, 2, 2, 1], padding='SAME') + self.biases['encoder_b2']) # 45*40*32
+        self.en_2 = tf.reshape(self.en_2, [-1, self.fc_prod])
+        self.en_3 = tf.nn.relu(tf.matmul(self.en_2, self.weights['encoder_fc']) + self.biases['encoder_fc'])
+        return self.en_3
+
+    # Building the decoder
+    def decoder(self,x):
+        layer_1 = tf.nn.relu(tf.matmul(x, self.weights['decoder_fc']) + self.biases['decoder_fc'])
+        layer_1 = tf.reshape(layer_1, [-1, 45, 40, 32])
+        layer_2 = tf.nn.relu(tf.nn.conv2d_transpose(layer_1, self.weights['decoder_h1'],output_shape=tf.shape(self.en_1),strides=[1, 2, 2, 1],padding='SAME') + self.biases['decoder_b1'])
+        layer_3 = tf.nn.sigmoid(tf.nn.conv2d_transpose(layer_2, self.weights['decoder_h2'],output_shape=tf.shape(self.X),strides=[1, 2, 2, 1],padding='SAME') + self.biases['decoder_b2'])
+        return layer_3
 
     def calc_loss(self):
         # Prediction
@@ -54,32 +78,6 @@ class CAE():
         return loss
 
 
-    # Building the encoder
-    def encoder(self,x):
-        # Encoder Hidden layer with sigmoid activation #1
-        layer_1 = tf.nn.sigmoid(tf.add(tf.matmul(x, self.weights['encoder_h1']),
-                                       self.biases['encoder_b1']))
-        # Encoder Hidden layer with sigmoid activation #2
-        layer_2 = tf.nn.sigmoid(tf.add(tf.matmul(layer_1, self.weights['encoder_h2']),
-                                       self.biases['encoder_b2']))
-        # Encoder Hidden layer with sigmoid activation #3
-        layer_3 = tf.nn.sigmoid(tf.add(tf.matmul(layer_2, self.weights['encoder_h3']),
-                                       self.biases['encoder_b3']))
-        return layer_3
-
-
-    # Building the decoder
-    def decoder(self,x):
-        # Decoder Hidden layer with sigmoid activation #1
-        layer_1 = tf.nn.sigmoid(tf.add(tf.matmul(x, self.weights['decoder_h1']),
-                                       self.biases['decoder_b1']))
-        # Decoder Hidden layer with sigmoid activation #2
-        layer_2 = tf.nn.sigmoid(tf.add(tf.matmul(layer_1, self.weights['decoder_h2']),
-                                       self.biases['decoder_b2']))
-        # Decoder Hidden layer with sigmoid activation #3
-        layer_3 = tf.nn.sigmoid(tf.add(tf.matmul(layer_2, self.weights['decoder_h3']),
-                                       self.biases['decoder_b3']))
-        return layer_3
 
 # 画像をとってくる
 def make_img(sess):
@@ -91,7 +89,6 @@ def make_img(sess):
     holder = tf.placeholder(tf.string)
     img = tf.read_file(holder)
     img = tf.image.decode_image(img, channels=1)
-    img = tf.reshape(img, [-1])
     img = tf.cast(img,dtype=np.float32)
     img = img/255.0 # 正規化
     for i in range(count):
@@ -102,10 +99,10 @@ def make_img(sess):
 
 if __name__ == "__main__":
     # Training Parameters
-    num_steps = 1000000
+    num_steps = 3000000
     batch_size = 100
     display_step = 1000
-    learning_rate = 0.002
+    learning_rate = 0.0001
 
     with tf.Session() as sess:
         model = CAE(learning_rate = learning_rate)
@@ -124,10 +121,8 @@ if __name__ == "__main__":
         # Training
         for i in range(1, num_steps+1):
             # Prepare Data
-            #ここにバッチサイズのデータを渡す
-            # batch_x, _ = mnist.train.next_batch(batch_size)
             next_b = i % 4 + 1
-            batch_x = images[(next_b-1)*100:next_b*100]
+            batch_x = images[(next_b-1) * batch_size:next_b * batch_size]
 
             # Run optimization op (backprop) and cost op (to get loss value)
             _, l = sess.run([model.optimizer, model.loss], feed_dict={model.X: batch_x})
