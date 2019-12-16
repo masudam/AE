@@ -97,6 +97,11 @@ def make_img(sess):
         imgs.append(img_val)
     return np.asarray(imgs, dtype=np.float32)
 
+# dirを作る
+def my_makedirs(path):
+    if not os.path.isdir(path):
+        os.makedirs(path)
+
 if __name__ == "__main__":
     # Training Parameters
     num_steps = 3000000
@@ -116,8 +121,11 @@ if __name__ == "__main__":
         images = make_img(sess)
         print("done.")
 
-        before = time.time()
+        dir_path = datetime.datetime.today().strftime("../models/%Y_%m_%d_%H_%M")
+        print("model will be saved to {}".format(dir_path))
+        my_makedirs(dir_path)
 
+        before = time.time()
         # Training
         for i in range(1, num_steps+1):
             # Prepare Data
@@ -129,12 +137,9 @@ if __name__ == "__main__":
             # Display logs per step
             if i % display_step == 0 or i == 1:
                 sec = time.time() - before
-                print('Step %i: Minibatch Loss: %f' % (i, l) + " and time is " + str(int(sec)))
-
-
-        def my_makedirs(path):
-            if not os.path.isdir(path):
-                os.makedirs(path)
-        dir_path = datetime.datetime.today().strftime("../models/%Y_%m_%d_%H_%M")
-        my_makedirs(dir_path)
-        saver.save(sess, dir_path + '/my-model.ckpt')
+                logs = 'Step %i: Minibatch Loss: %f' % (i, l) + " and time is " + str(int(sec))
+                print(logs)
+                with open (dir_path+"/log.txt",'a') as f:
+                    f.write(logs + '\n')
+            if i % 500000 == 0:
+                saver.save(sess, dir_path + '/my-model.ckpt', global_step=int(i/500000))
