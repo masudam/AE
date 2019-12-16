@@ -107,7 +107,7 @@ if __name__ == "__main__":
     num_steps = 3000000
     batch_size = 100
     display_step = 1000
-    learning_rate = 0.0001
+    learning_rate = 0.00001
 
     with tf.Session() as sess:
         model = CAE(learning_rate = learning_rate)

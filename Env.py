@@ -1,14 +1,10 @@
 from __future__ import division
 import pygame
 from pygame.locals import *
-import gym.spaces
 import numpy as np
-from PIL import Image
-import gym
-import argparse
 from pygame import Rect
 
-class armEnv(gym.Env):
+class armEnv():
     def __init__(self, _is_render=False, _is_sparse=False):
         self._is_render = _is_render
         self.SCREEN_HEIGHT = 600
@@ -54,6 +50,5 @@ class armEnv(gym.Env):
         s = pygame.Surface((self.rectSIZE[0], self.rectSIZE[1]))
         s.blit(self.screen, (0,0), (self.rectPOS[0], self.rectPOS[1], self.rectSIZE[0], self.rectSIZE[1]))
         pic = pygame.surfarray.array3d(s)
-        #試しに(x,x,1)に次元を下げてみる
         pic = np.mean(pic, -1, keepdims=True)
         return pic

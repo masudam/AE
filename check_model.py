@@ -47,16 +47,6 @@ class AE():
         self.loss = self.calc_loss()
         self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate).minimize(self.loss)
 
-    def calc_loss(self):
-        # Prediction
-        y_pred = self.decoder_op
-        # Targets (Labels) are the input data.
-        y_true = self.X
-        # Define loss and optimizer, minimize the squared error
-        loss = tf.reduce_mean(tf.pow(y_true - y_pred, 2))
-        return loss
-
-
     # Building the encoder
     def encoder(self,x):
         # Encoder Hidden layer with sigmoid activation #1
@@ -83,6 +73,16 @@ class AE():
         layer_3 = tf.nn.sigmoid(tf.add(tf.matmul(layer_2, self.weights['decoder_h3']),
                                        self.biases['decoder_b3']))
         return layer_3
+
+    def calc_loss(self):
+        # Prediction
+        y_pred = self.decoder_op
+        # Targets (Labels) are the input data.
+        y_true = self.X
+        # Define loss and optimizer, minimize the squared error
+        loss = tf.reduce_mean(tf.pow(y_true - y_pred, 2))
+        return loss
+
 
 # 画像をとってくる
 def make_img(sess):
