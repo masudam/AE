@@ -54,17 +54,17 @@ class CAE():
 
     # Building the encoder
     def encoder(self,x):
-        self.en_1 = tf.nn.relu(tf.nn.conv2d(x, self.weights['encoder_h1'], strides=[1, 2, 2, 1], padding='SAME') + self.biases['encoder_b1']) # 90*80*32
-        self.en_2 = tf.nn.relu(tf.nn.conv2d(self.en_1, self.weights['encoder_h2'], strides=[1, 2, 2, 1], padding='SAME') + self.biases['encoder_b2']) # 45*40*32
+        self.en_1 = tf.nn.tanh(tf.nn.conv2d(x, self.weights['encoder_h1'], strides=[1, 2, 2, 1], padding='SAME') + self.biases['encoder_b1']) # 90*80*32
+        self.en_2 = tf.nn.tanh(tf.nn.conv2d(self.en_1, self.weights['encoder_h2'], strides=[1, 2, 2, 1], padding='SAME') + self.biases['encoder_b2']) # 45*40*32
         self.en_2 = tf.reshape(self.en_2, [-1, self.fc_prod])
-        self.en_3 = tf.nn.relu(tf.matmul(self.en_2, self.weights['encoder_fc']) + self.biases['encoder_fc'])
+        self.en_3 = tf.nn.tanh(tf.matmul(self.en_2, self.weights['encoder_fc']) + self.biases['encoder_fc'])
         return self.en_3
 
     # Building the decoder
     def decoder(self,x):
-        layer_1 = tf.nn.relu(tf.matmul(x, self.weights['decoder_fc']) + self.biases['decoder_fc'])
+        layer_1 = tf.nn.tanh(tf.matmul(x, self.weights['decoder_fc']) + self.biases['decoder_fc'])
         layer_1 = tf.reshape(layer_1, [-1, 45, 40, 32])
-        layer_2 = tf.nn.relu(tf.nn.conv2d_transpose(layer_1, self.weights['decoder_h1'],output_shape=tf.shape(self.en_1),strides=[1, 2, 2, 1],padding='SAME') + self.biases['decoder_b1'])
+        layer_2 = tf.nn.tanh(tf.nn.conv2d_transpose(layer_1, self.weights['decoder_h1'],output_shape=tf.shape(self.en_1),strides=[1, 2, 2, 1],padding='SAME') + self.biases['decoder_b1'])
         layer_3 = tf.nn.sigmoid(tf.nn.conv2d_transpose(layer_2, self.weights['decoder_h2'],output_shape=tf.shape(self.X),strides=[1, 2, 2, 1],padding='SAME') + self.biases['decoder_b2'])
         return layer_3
 
