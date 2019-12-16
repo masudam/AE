@@ -7,82 +7,7 @@ import datetime
 import os
 import time
 import sys
-
-
-class AE():
-    def __init__(self):
-        # Training Parameters
-        self.learning_rate = 0.002
-        self.num_steps = 1000000
-        self.batch_size = 100
-        self.display_step = 1000
-
-        # Network Parameters
-        self.num_hidden_1 = 1024 # 1st layer num features
-        self.num_hidden_2 = 512 # 2nd layer num features (the latent dim)
-        self.num_hidden_3 = 128
-        self.num_input = 28800 # MNIST data input (img shape: 180*160)
-
-        # tf Graph input (only pictures)
-        self.X = tf.placeholder("float", [None, self.num_input])
-        self.weights = {
-            'encoder_h1': tf.Variable(tf.random_normal([self.num_input, self.num_hidden_1])),
-            'encoder_h2': tf.Variable(tf.random_normal([self.num_hidden_1, self.num_hidden_2])),
-            'encoder_h3': tf.Variable(tf.random_normal([self.num_hidden_2, self.num_hidden_3])),
-            'decoder_h1': tf.Variable(tf.random_normal([self.num_hidden_3, self.num_hidden_2])),
-            'decoder_h2': tf.Variable(tf.random_normal([self.num_hidden_2, self.num_hidden_1])),
-            'decoder_h3': tf.Variable(tf.random_normal([self.num_hidden_1, self.num_input])),
-        }
-        self.biases = {
-            'encoder_b1': tf.Variable(tf.random_normal([self.num_hidden_1])),
-            'encoder_b2': tf.Variable(tf.random_normal([self.num_hidden_2])),
-            'encoder_b3': tf.Variable(tf.random_normal([self.num_hidden_3])),
-            'decoder_b1': tf.Variable(tf.random_normal([self.num_hidden_2])),
-            'decoder_b2': tf.Variable(tf.random_normal([self.num_hidden_1])),
-            'decoder_b3': tf.Variable(tf.random_normal([self.num_input])),
-        }
-        # Construct model
-        self.encoder_op = self.encoder(self.X)
-        self.decoder_op = self.decoder(self.encoder_op)
-        self.loss = self.calc_loss()
-        self.optimizer = tf.train.RMSPropOptimizer(self.learning_rate).minimize(self.loss)
-
-    # Building the encoder
-    def encoder(self,x):
-        # Encoder Hidden layer with sigmoid activation #1
-        layer_1 = tf.nn.sigmoid(tf.add(tf.matmul(x, self.weights['encoder_h1']),
-                                       self.biases['encoder_b1']))
-        # Encoder Hidden layer with sigmoid activation #2
-        layer_2 = tf.nn.sigmoid(tf.add(tf.matmul(layer_1, self.weights['encoder_h2']),
-                                       self.biases['encoder_b2']))
-        # Encoder Hidden layer with sigmoid activation #3
-        layer_3 = tf.nn.sigmoid(tf.add(tf.matmul(layer_2, self.weights['encoder_h3']),
-                                       self.biases['encoder_b3']))
-        return layer_3
-
-
-    # Building the decoder
-    def decoder(self,x):
-        # Decoder Hidden layer with sigmoid activation #1
-        layer_1 = tf.nn.sigmoid(tf.add(tf.matmul(x, self.weights['decoder_h1']),
-                                       self.biases['decoder_b1']))
-        # Decoder Hidden layer with sigmoid activation #2
-        layer_2 = tf.nn.sigmoid(tf.add(tf.matmul(layer_1, self.weights['decoder_h2']),
-                                       self.biases['decoder_b2']))
-        # Decoder Hidden layer with sigmoid activation #3
-        layer_3 = tf.nn.sigmoid(tf.add(tf.matmul(layer_2, self.weights['decoder_h3']),
-                                       self.biases['decoder_b3']))
-        return layer_3
-
-    def calc_loss(self):
-        # Prediction
-        y_pred = self.decoder_op
-        # Targets (Labels) are the input data.
-        y_true = self.X
-        # Define loss and optimizer, minimize the squared error
-        loss = tf.reduce_mean(tf.pow(y_true - y_pred, 2))
-        return loss
-
+from CAE import CAE
 
 # 画像をとってくる
 def make_img(sess):
@@ -112,10 +37,12 @@ if __name__ == "__main__":
         sess.run(init)
         #まずはmodelを読み込む
         print("restore model...")
-        model = AE()
-        # saver = tf.train.import_meta_graph(model_dir+".meta")
+        saver = tf.train.import_meta_graph(model_dir+".meta")
         saver = tf.train.Saver()
         saver.restore(sess, model_dir)
+        # これで前にaddした名前を呼び出して使える
+        ph_X = tf.get_collection("X:0")[0]
+        decoder = tf.get_collection("en_decoder:0")[0]
         print("done.")
 
 
@@ -132,7 +59,7 @@ if __name__ == "__main__":
             #batch_x = images[i*100:i*100+1]
             batch_x = images[0:4]
             # Encode and decode the digit image
-            g = sess.run(model.decoder_op, feed_dict={model.X: batch_x})
+            g = sess.run(decoder, feed_dict={ph_X: batch_x})
 
             # Display original images
             for j in range(n):
