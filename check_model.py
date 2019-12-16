@@ -25,6 +25,8 @@ def make_img(sess):
         img = img/255.0 # 正規化
         img_val = sess.run(img)
         imgs.append(img_val)
+        if i % 10 == 0 :
+            print("{} done.".format(str(i)))
     return np.asarray(imgs, dtype=np.float32)
 
 
@@ -33,18 +35,26 @@ if __name__ == "__main__":
     inp = sys.argv
     model_dir = "../models/" + inp[1] + '/my-model.ckpt'
     with tf.Session() as sess:
+        init = tf.global_variables_initializer()
+        sess.run(init)
         #まずはmodelを読み込む
+        print("restore model...")
         saver = tf.train.import_meta_graph(model_dir+".meta")
         saver.restore(sess, model_dir)
+        print("done.")
 
+
+        print("prepare data...")
         images = make_img(sess)
+        print("done.")
         # Testing
         # Encode and decode images from test set and visualize their reconstruction.
         n = 4
         canvas_orig = np.empty((180 * n, 160 * n))
         canvas_recon = np.empty((180 * n, 160 * n))
+        print("prepare check...")
         for i in range(n):
-            batch_x = images[:n]
+            batch_x = images[i*100:i*100+1]
             # Encode and decode the digit image
             g = sess.run(decoder_op, feed_dict={X: batch_x})
 
