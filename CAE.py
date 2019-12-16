@@ -101,45 +101,46 @@ def make_img(sess):
             print("{} done.".format(str(i)))
     return np.asarray(imgs, dtype=np.float32)
 
-# Start Training
-# Start a new TF session
-
-# Training Parameters
-num_steps = 1000000
-batch_size = 100
-display_step = 1000
-
-with tf.Session() as sess:
-    model = AE(learning_rate = 0.002)
-
-    # Run the initializer
-    # Initialize the variables (i.e. assign their default value)
-    init = tf.global_variables_initializer()
-    sess.run(init)
-    saver = tf.train.Saver(max_to_keep=100)
-    images = make_img(sess)
-
-    before = time.time()
-
-    # Training
-    for i in range(1, num_steps+1):
-        # Prepare Data
-        #ここにバッチサイズのデータを渡す
-        # batch_x, _ = mnist.train.next_batch(batch_size)
-        next_b = i % 4 + 1
-        batch_x = images[(next_b-1)*100:next_b*100]
-
-        # Run optimization op (backprop) and cost op (to get loss value)
-        _, l = sess.run([model.optimizer, model.loss], feed_dict={model.X: batch_x})
-        # Display logs per step
-        if i % display_step == 0 or i == 1:
-            sec = time.time() - before
-            print('Step %i: Minibatch Loss: %f' % (i, l) + " and time is " + str(int(sec)))
 
 
-    def my_makedirs(path):
-        if not os.path.isdir(path):
-            os.makedirs(path)
-    dir_path = datetime.datetime.today().strftime("../models/%Y_%m_%d_%H_%M")
-    my_makedirs(dir_path)
-    saver.save(sess, dir_path + '/my-model.ckpt')
+if __name__ == "__main__":
+    # Training Parameters
+    num_steps = 1000000
+    batch_size = 100
+    display_step = 1000
+    learning_rate = 0.002
+
+    with tf.Session() as sess:
+        model = AE(learning_rate = learning_rate)
+
+        # Run the initializer
+        # Initialize the variables (i.e. assign their default value)
+        init = tf.global_variables_initializer()
+        sess.run(init)
+        saver = tf.train.Saver(max_to_keep=100)
+        images = make_img(sess)
+
+        before = time.time()
+
+        # Training
+        for i in range(1, num_steps+1):
+            # Prepare Data
+            #ここにバッチサイズのデータを渡す
+            # batch_x, _ = mnist.train.next_batch(batch_size)
+            next_b = i % 4 + 1
+            batch_x = images[(next_b-1)*100:next_b*100]
+
+            # Run optimization op (backprop) and cost op (to get loss value)
+            _, l = sess.run([model.optimizer, model.loss], feed_dict={model.X: batch_x})
+            # Display logs per step
+            if i % display_step == 0 or i == 1:
+                sec = time.time() - before
+                print('Step %i: Minibatch Loss: %f' % (i, l) + " and time is " + str(int(sec)))
+
+
+        def my_makedirs(path):
+            if not os.path.isdir(path):
+                os.makedirs(path)
+        dir_path = datetime.datetime.today().strftime("../models/%Y_%m_%d_%H_%M")
+        my_makedirs(dir_path)
+        saver.save(sess, dir_path + '/my-model.ckpt')
