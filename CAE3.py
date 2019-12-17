@@ -23,7 +23,7 @@ class CAE():
         self.channel4 = 32
         self.fc_z = 1032
         self.z_size = 200
-        self.fc_size = [None, int(self.input[1]/8), int(self.input[2]/8), self.channel3]
+        self.fc_size = [None, int(self.input[1]/8), int(self.input[2]/8), self.channel4]
         self.fc_prod = int(np.prod(self.fc_size[1:])) # 積
 
         self.X = tf.placeholder("float", self.input)

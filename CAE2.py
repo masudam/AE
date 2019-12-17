@@ -18,9 +18,9 @@ class CAE():
         # Network Parameters
         self.input = [None, 72, 64, 1] # data input (img shape: 180*160*1)
         self.channel1 = 1
-        self.channel2 = 16
-        self.channel3 = 32
-        self.channel4 = 32
+        self.channel2 = 32
+        self.channel3 = 16
+        self.channel4 = 8
         self.z_size = 200
         self.fc_size = [None, int(self.input[1]/8), int(self.input[2]/8), self.channel3]
         self.fc_prod = int(np.prod(self.fc_size[1:])) # 積
