@@ -120,9 +120,9 @@ def my_makedirs(path):
 
 if __name__ == "__main__":
     # Training Parameters
-    epoch = 500000
+    epoch = 1000000
     batch_size = 100
-    display_step = 1000
+    display_step = 500
     lr = 0.00001
 
     with tf.Session() as sess:
@@ -155,9 +155,9 @@ if __name__ == "__main__":
                 # Display logs per step
             if i % display_step == 0 or i == 1:
                 sec = time.time() - before
-                logs = 'Step %i: Minibatch Loss: %f' % (i, l) + " and time is " + str(int(sec))
+                logs = 'Step {}'.format(str(i)) + ' / {} : '.format(str(epoch)) +  'Minibatch Loss: %f' % (l) + " and time is " + str(int(sec))
                 print(logs)
                 with open (dir_path+"/log.txt",'a') as f:
                     f.write(logs + '\n')
             if i % 125000 == 0:
-                saver.save(sess, dir_path + '/my-model.ckpt', global_step=int(i/500000))
+                saver.save(sess, dir_path + '/my-model.ckpt', global_step=int(i/125000))
