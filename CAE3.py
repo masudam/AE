@@ -21,6 +21,7 @@ class CAE():
         self.channel2 = 16
         self.channel3 = 32
         self.channel4 = 32
+        self.fc_z = 1032
         self.z_size = 200
         self.fc_size = [None, int(self.input[1]/8), int(self.input[2]/8), self.channel3]
         self.fc_prod = int(np.prod(self.fc_size[1:])) # 積
@@ -31,8 +32,10 @@ class CAE():
             'encoder_h1': tf.Variable(tf.random_normal([5, 5, self.channel1, self.channel2])),
             'encoder_h2': tf.Variable(tf.random_normal([5, 5, self.channel2, self.channel3])),
             'encoder_h3': tf.Variable(tf.random_normal([5, 5, self.channel3, self.channel4])),
-            'encoder_fc' : tf.Variable(tf.random_normal([self.fc_prod, self.z_size])),
-            'decoder_fc': tf.Variable(tf.random_normal([self.z_size, self.fc_prod])),
+            'encoder_fc1' : tf.Variable(tf.random_normal([self.fc_prod, self.fc_z])),
+            'encoder_fc2' : tf.Variable(tf.random_normal([self.fc_z, self.z_size])),
+            'decoder_fc1': tf.Variable(tf.random_normal([self.z_size, self.fc_z])),
+            'decoder_fc2': tf.Variable(tf.random_normal([self.fc_z, self.fc_prod])),
             'decoder_h1': tf.Variable(tf.random_normal([5, 5, self.channel3, self.channel4])),
             'decoder_h2': tf.Variable(tf.random_normal([5, 5, self.channel2, self.channel3])),
             'decoder_h3': tf.Variable(tf.random_normal([5, 5, self.channel1, self.channel2])),
@@ -41,8 +44,10 @@ class CAE():
             'encoder_b1': tf.Variable(tf.random_normal([self.channel2])),
             'encoder_b2': tf.Variable(tf.random_normal([self.channel3])),
             'encoder_b3': tf.Variable(tf.random_normal([self.channel4])),
-            'encoder_fc': tf.Variable(tf.random_normal([self.z_size])),
-            'decoder_fc': tf.Variable(tf.random_normal([self.fc_prod])),
+            'encoder_fc1': tf.Variable(tf.random_normal([self.fc_z])),
+            'encoder_fc2': tf.Variable(tf.random_normal([self.z_size])),
+            'decoder_fc1': tf.Variable(tf.random_normal([self.fc_z])),
+            'decoder_fc2': tf.Variable(tf.random_normal([self.fc_prod])),
             'decoder_b1': tf.Variable(tf.random_normal([self.channel3])),
             'decoder_b2': tf.Variable(tf.random_normal([self.channel2])),
             'decoder_b3': tf.Variable(tf.random_normal([self.channel1])),
@@ -65,17 +70,19 @@ class CAE():
         self.en_2 = tf.nn.tanh(tf.nn.conv2d(self.en_1, self.weights['encoder_h2'], strides=[1, 2, 2, 1], padding='SAME') + self.biases['encoder_b2']) # 18*16*32
         self.en_3 = tf.nn.tanh(tf.nn.conv2d(self.en_2, self.weights['encoder_h3'], strides=[1, 2, 2, 1], padding='SAME') + self.biases['encoder_b3']) # 9*8*32
         self.en_3 = tf.reshape(self.en_3, [-1, self.fc_prod])
-        self.en_4 = tf.nn.tanh(tf.matmul(self.en_3, self.weights['encoder_fc']) + self.biases['encoder_fc'])
-        return self.en_4
+        self.en_4 = tf.nn.tanh(tf.matmul(self.en_3, self.weights['encoder_fc1']) + self.biases['encoder_fc1'])
+        self.en_5 = tf.nn.tanh(tf.matmul(self.en_4, self.weights['encoder_fc2']) + self.biases['encoder_fc2'])
+        return self.en_5
 
     # Building the decoder
     def decoder(self,x):
-        layer_1 = tf.nn.tanh(tf.matmul(x, self.weights['decoder_fc']) + self.biases['decoder_fc'])
-        layer_1 = tf.reshape(layer_1, [-1, self.fc_size[1], self.fc_size[2], self.channel3])
-        layer_2 = tf.nn.tanh(tf.nn.conv2d_transpose(layer_1, self.weights['decoder_h1'],output_shape=tf.shape(self.en_2),strides=[1, 2, 2, 1],padding='SAME') + self.biases['decoder_b1'])
-        layer_3 = tf.nn.tanh(tf.nn.conv2d_transpose(layer_2, self.weights['decoder_h2'],output_shape=tf.shape(self.en_1),strides=[1, 2, 2, 1],padding='SAME') + self.biases['decoder_b2'])
-        layer_4 = tf.nn.sigmoid(tf.nn.conv2d_transpose(layer_3, self.weights['decoder_h3'],output_shape=tf.shape(self.X),strides=[1, 2, 2, 1],padding='SAME') + self.biases['decoder_b3'])
-        return layer_4
+        layer_1 = tf.nn.tanh(tf.matmul(x, self.weights['decoder_fc1']) + self.biases['decoder_fc1'])
+        layer_2 = tf.nn.tanh(tf.matmul(layer_1, self.weights['decoder_fc2']) + self.biases['decoder_fc2'])
+        layer_2 = tf.reshape(layer_2, [-1, self.fc_size[1], self.fc_size[2], self.channel3])
+        layer_3 = tf.nn.tanh(tf.nn.conv2d_transpose(layer_2, self.weights['decoder_h1'],output_shape=tf.shape(self.en_2),strides=[1, 2, 2, 1],padding='SAME') + self.biases['decoder_b1'])
+        layer_4 = tf.nn.tanh(tf.nn.conv2d_transpose(layer_3, self.weights['decoder_h2'],output_shape=tf.shape(self.en_1),strides=[1, 2, 2, 1],padding='SAME') + self.biases['decoder_b2'])
+        layer_5 = tf.nn.sigmoid(tf.nn.conv2d_transpose(layer_4, self.weights['decoder_h3'],output_shape=tf.shape(self.X),strides=[1, 2, 2, 1],padding='SAME') + self.biases['decoder_b3'])
+        return layer_5
 
     def calc_loss(self):
         # Prediction
