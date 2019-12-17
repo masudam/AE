@@ -15,26 +15,27 @@ class CAE():
         self.learning_rate = learning_rate
 
         # Network Parameters
-        self.input = [None, 180, 160, 1] # data input (img shape: 180*160*1)
+        self.input = [None, 72, 64, 1] # data input (img shape: 180*160*1)
         self.channel1 = 1
-        self.channel2 = 32
+        self.channel2 = 16
+        self.channel3 = 32
         self.z_size = 200
-        self.fc_size = [None, self.input[1]/4, self.input[2]/4, self.channel2]
+        self.fc_size = [None, int(self.input[1]/4), int(self.input[2]/4), self.channel3]
         self.fc_prod = int(np.prod(self.fc_size[1:])) # 積
 
         self.X = tf.placeholder("float", self.input)
 
         self.weights = {
             'encoder_h1': tf.Variable(tf.random_normal([5, 5, self.channel1, self.channel2])),
-            'encoder_h2': tf.Variable(tf.random_normal([5, 5, self.channel2, self.channel2])),
+            'encoder_h2': tf.Variable(tf.random_normal([5, 5, self.channel2, self.channel3])),
             'encoder_fc' : tf.Variable(tf.random_normal([self.fc_prod, self.z_size])),
             'decoder_fc': tf.Variable(tf.random_normal([self.z_size, self.fc_prod])),
-            'decoder_h1': tf.Variable(tf.random_normal([5, 5, self.channel2, self.channel2])),
+            'decoder_h1': tf.Variable(tf.random_normal([5, 5, self.channel2, self.channel3])),
             'decoder_h2': tf.Variable(tf.random_normal([5, 5, self.channel1, self.channel2])),
         }
         self.biases = {
-            'encoder_b1': tf.Variable(tf.random_normal([self.channel1])),
-            'encoder_b2': tf.Variable(tf.random_normal([self.channel2])),
+            'encoder_b1': tf.Variable(tf.random_normal([self.channel2])),
+            'encoder_b2': tf.Variable(tf.random_normal([self.channel3])),
             'encoder_fc': tf.Variable(tf.random_normal([self.z_size])),
             'decoder_fc': tf.Variable(tf.random_normal([self.fc_prod])),
             'decoder_b1': tf.Variable(tf.random_normal([self.channel2])),
@@ -63,7 +64,7 @@ class CAE():
     # Building the decoder
     def decoder(self,x):
         layer_1 = tf.nn.tanh(tf.matmul(x, self.weights['decoder_fc']) + self.biases['decoder_fc'])
-        layer_1 = tf.reshape(layer_1, [-1, 45, 40, 32])
+        layer_1 = tf.reshape(layer_1, [-1, self.fc_size[1], self.fc_size[2], 32])
         layer_2 = tf.nn.tanh(tf.nn.conv2d_transpose(layer_1, self.weights['decoder_h1'],output_shape=tf.shape(self.en_1),strides=[1, 2, 2, 1],padding='SAME') + self.biases['decoder_b1'])
         layer_3 = tf.nn.sigmoid(tf.nn.conv2d_transpose(layer_2, self.weights['decoder_h2'],output_shape=tf.shape(self.X),strides=[1, 2, 2, 1],padding='SAME') + self.biases['decoder_b2'])
         return layer_3
@@ -88,7 +89,8 @@ def make_img(sess):
     imgs = []
     holder = tf.placeholder(tf.string)
     img = tf.read_file(holder)
-    img = tf.image.decode_image(img, channels=1)
+    img = tf.image.decode_png(img, channels=1)
+    img = tf.image.resize_images(img, [72,64])
     img = tf.cast(img,dtype=np.float32)
     img = img/255.0 # 正規化
     for i in range(count):
@@ -104,7 +106,7 @@ def my_makedirs(path):
 
 if __name__ == "__main__":
     # Training Parameters
-    num_steps = 3000000
+    num_steps = 1000000
     batch_size = 100
     display_step = 1000
     lr = 0.00001

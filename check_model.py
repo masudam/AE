@@ -30,7 +30,7 @@ def make_img(sess):
 
 if __name__ == "__main__":
     inp = sys.argv
-    model_dir = "../models/" + inp[1] + '/my-model.ckpt'
+    model_dir = "../models/" + inp[1] + '/my-model.ckpt' + inp[2]
     with tf.Session() as sess:
         # Initialize the variables (i.e. assign their default value)
         init = tf.global_variables_initializer()
@@ -41,8 +41,8 @@ if __name__ == "__main__":
         saver = tf.train.Saver()
         saver.restore(sess, model_dir)
         # これで前にaddした名前を呼び出して使える
-        ph_X = tf.get_collection("X:0")[0]
-        decoder = tf.get_collection("en_decoder:0")[0]
+        ph_X = tf.get_collection("X")[0]
+        decoder = tf.get_collection("en_decoder")[0]
         print("done.")
 
 
