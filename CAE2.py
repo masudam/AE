@@ -120,7 +120,7 @@ def my_makedirs(path):
 
 if __name__ == "__main__":
     # Training Parameters
-    num_steps = 2000000
+    epoch = 500000
     batch_size = 100
     display_step = 1000
     lr = 0.00001
@@ -143,20 +143,21 @@ if __name__ == "__main__":
         my_makedirs(dir_path)
 
         before = time.time()
+        num_data = 400
         # Training
-        for i in range(1, num_steps+1):
+        for i in range(1, epoch+1):
             # Prepare Data
-            next_b = i % 4 + 1
-            batch_x = images[(next_b-1) * batch_size:next_b * batch_size]
-
-            # Run optimization op (backprop) and cost op (to get loss value)
-            _, l = sess.run([model.optimizer, model.loss], feed_dict={model.X: batch_x})
-            # Display logs per step
+            sff_idx = np.random.permutation(num_data)
+            for idx in range(0, num_data, batch_size):
+                batch_x = images[sff_idx[idx: idx + batch_size if idx + batch_size < num_data else num_data]]
+                # Run optimization op (backprop) and cost op (to get loss value)
+                _, l = sess.run([model.optimizer, model.loss], feed_dict={model.X: batch_x})
+                # Display logs per step
             if i % display_step == 0 or i == 1:
                 sec = time.time() - before
                 logs = 'Step %i: Minibatch Loss: %f' % (i, l) + " and time is " + str(int(sec))
                 print(logs)
                 with open (dir_path+"/log.txt",'a') as f:
                     f.write(logs + '\n')
-            if i % 500000 == 0:
+            if i % 125000 == 0:
                 saver.save(sess, dir_path + '/my-model.ckpt', global_step=int(i/500000))
