@@ -19,7 +19,7 @@ def make_img(sess):
     holder = tf.placeholder(tf.string)
     img = tf.read_file(holder)
     img = tf.image.decode_image(img, channels=1)
-    img = tf.reshape(img, [-1])
+    # img = tf.reshape(img, [-1])
     img = tf.cast(img,dtype=np.float32)
     img = img/255.0 # 正規化
     for i in range(count):

@@ -6,6 +6,7 @@ import matplotlib.pyplot as plt
 import datetime
 import os
 import time
+import cv2
 
 
 
@@ -55,8 +56,8 @@ class CAE():
 
     # Building the encoder
     def encoder(self,x):
-        self.en_1 = tf.nn.tanh(tf.nn.conv2d(x, self.weights['encoder_h1'], strides=[1, 2, 2, 1], padding='SAME') + self.biases['encoder_b1']) # 90*80*32
-        self.en_2 = tf.nn.tanh(tf.nn.conv2d(self.en_1, self.weights['encoder_h2'], strides=[1, 2, 2, 1], padding='SAME') + self.biases['encoder_b2']) # 45*40*32
+        self.en_1 = tf.nn.tanh(tf.nn.conv2d(x, self.weights['encoder_h1'], strides=[1, 2, 2, 1], padding='SAME') + self.biases['encoder_b1']) # 36*32*16
+        self.en_2 = tf.nn.tanh(tf.nn.conv2d(self.en_1, self.weights['encoder_h2'], strides=[1, 2, 2, 1], padding='SAME') + self.biases['encoder_b2']) # 18*16*32
         self.en_2 = tf.reshape(self.en_2, [-1, self.fc_prod])
         self.en_3 = tf.nn.tanh(tf.matmul(self.en_2, self.weights['encoder_fc']) + self.biases['encoder_fc'])
         return self.en_3
@@ -64,7 +65,7 @@ class CAE():
     # Building the decoder
     def decoder(self,x):
         layer_1 = tf.nn.tanh(tf.matmul(x, self.weights['decoder_fc']) + self.biases['decoder_fc'])
-        layer_1 = tf.reshape(layer_1, [-1, self.fc_size[1], self.fc_size[2], 32])
+        layer_1 = tf.reshape(layer_1, [-1, self.fc_size[1], self.fc_size[2], self.channel3])
         layer_2 = tf.nn.tanh(tf.nn.conv2d_transpose(layer_1, self.weights['decoder_h1'],output_shape=tf.shape(self.en_1),strides=[1, 2, 2, 1],padding='SAME') + self.biases['decoder_b1'])
         layer_3 = tf.nn.sigmoid(tf.nn.conv2d_transpose(layer_2, self.weights['decoder_h2'],output_shape=tf.shape(self.X),strides=[1, 2, 2, 1],padding='SAME') + self.biases['decoder_b2'])
         return layer_3
@@ -81,23 +82,29 @@ class CAE():
 
 
 # 画像をとってくる
-def make_img(sess):
-    dir_name="../img_data"
-    #fileの数を調べる
-    files = os.listdir(dir_name)
-    count = len(files)
-    imgs = []
-    holder = tf.placeholder(tf.string)
-    img = tf.read_file(holder)
-    img = tf.image.decode_png(img, channels=1)
-    img = tf.image.resize_images(img, [72,64])
-    img = tf.cast(img,dtype=np.float32)
-    img = img/255.0 # 正規化
-    for i in range(count):
-        img_name = dir_name + "/{}.png".format(str(i).zfill(4))
-        img_val = sess.run(img, feed_dict={holder: img_name})
-        imgs.append(img_val)
-    return np.asarray(imgs, dtype=np.float32)
+class get_img():
+    def __init__(self, sess, rev=False):
+        self.sess = sess
+        self.dir_name="../img_data"
+        #fileの数を調べる
+        files = os.listdir(self.dir_name)
+        self.count = len(files)
+        self.holder = tf.placeholder(tf.string)
+        img = tf.read_file(self.holder)
+        img = tf.image.decode_png(img, channels=1)
+        img = tf.image.resize_images(img, [72,64])
+        v = tf.Variable(tf.ones(tf.shape(img)[1:], dtype=tf.float32))
+        if rev:
+            img = v - img/255.0 # 正規化して反転
+        self.img = tf.cast(img,dtype=np.float32)
+
+    def make_img(self):
+        imgs = []
+        for i in range(self.count):
+            img_name = self.dir_name + "/{}.png".format(str(i).zfill(4))
+            img_val = self.sess.run(self.img, feed_dict={self.holder: img_name})
+            imgs.append(img_val)
+        return np.asarray(imgs, dtype=np.float32)
 
 # dirを作る
 def my_makedirs(path):
@@ -106,13 +113,14 @@ def my_makedirs(path):
 
 if __name__ == "__main__":
     # Training Parameters
-    num_steps = 1000000
+    num_steps = 2000000
     batch_size = 100
     display_step = 1000
     lr = 0.00001
 
     with tf.Session() as sess:
         model = CAE(learning_rate = lr)
+        gm = get_img(sess, rev=True)
 
         # Run the initializer
         # Initialize the variables (i.e. assign their default value)
@@ -120,7 +128,7 @@ if __name__ == "__main__":
         sess.run(init)
         saver = tf.train.Saver(max_to_keep=100)
         print("prepare data...")
-        images = make_img(sess)
+        images = gm.make_img()
         print("done.")
 
         dir_path = datetime.datetime.today().strftime("../models/%Y_%m_%d_%H_%M")
