@@ -127,10 +127,11 @@ def my_makedirs(path):
 
 if __name__ == "__main__":
     # Training Parameters
-    num_steps = 2000000
-    batch_size = 100
-    display_step = 1000
-    lr = 0.00001
+    epoch = 2000000
+    batch_size = 32
+    display_step = 500
+    lr = 0.001
+    save_num = 125000
 
     with tf.Session() as sess:
         model = CAE(learning_rate = lr)
@@ -150,20 +151,21 @@ if __name__ == "__main__":
         my_makedirs(dir_path)
 
         before = time.time()
+        num_data = 400
         # Training
-        for i in range(1, num_steps+1):
+        for i in range(1, epoch+1):
             # Prepare Data
-            next_b = i % 4 + 1
-            batch_x = images[(next_b-1) * batch_size:next_b * batch_size]
-
-            # Run optimization op (backprop) and cost op (to get loss value)
-            _, l = sess.run([model.optimizer, model.loss], feed_dict={model.X: batch_x})
-            # Display logs per step
+            sff_idx = np.random.permutation(num_data)
+            for idx in range(0, num_data, batch_size):
+                batch_x = images[sff_idx[idx: idx + batch_size if idx + batch_size < num_data else num_data]]
+                # Run optimization op (backprop) and cost op (to get loss value)
+                _, l = sess.run([model.optimizer, model.loss], feed_dict={model.X: batch_x})
+                # Display logs per step
             if i % display_step == 0 or i == 1:
                 sec = time.time() - before
-                logs = 'Step %i: Minibatch Loss: %f' % (i, l) + " and time is " + str(int(sec))
+                logs = 'Step {}'.format(str(i)) + ' / {} : '.format(str(epoch)) +  'Minibatch Loss: %f' % (l) + " and time is " + str(int(sec))
                 print(logs)
                 with open (dir_path+"/log.txt",'a') as f:
                     f.write(logs + '\n')
-            if i % 500000 == 0:
-                saver.save(sess, dir_path + '/my-model.ckpt', global_step=int(i/500000))
+            if i % save_num == 0:
+                saver.save(sess, dir_path + '/my-model.ckpt', global_step=int(i/save_num))

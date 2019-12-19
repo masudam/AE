@@ -120,10 +120,11 @@ def my_makedirs(path):
 
 if __name__ == "__main__":
     # Training Parameters
-    epoch = 1000000
-    batch_size = 100
+    epoch = 2000000
+    batch_size = 32
     display_step = 500
-    lr = 0.00001
+    lr = 0.001
+    save_num = 125000
 
     with tf.Session() as sess:
         model = CAE(learning_rate = lr)
@@ -159,5 +160,5 @@ if __name__ == "__main__":
                 print(logs)
                 with open (dir_path+"/log.txt",'a') as f:
                     f.write(logs + '\n')
-            if i % 125000 == 0:
-                saver.save(sess, dir_path + '/my-model.ckpt', global_step=int(i/125000))
+            if i % save_num == 0:
+                saver.save(sess, dir_path + '/my-model.ckpt', global_step=int(i/save_num))
