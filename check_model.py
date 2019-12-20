@@ -37,7 +37,7 @@ class get_img():
         #fileの数を調べる
         files = os.listdir(self.dir_name)
         self.count = len(files)
-        self.holder = tf.placeholder(tf.string)
+        self.holder = tf.placeholder(tf.string, name='holder')
         img = tf.read_file(self.holder)
         img = tf.image.decode_png(img, channels=1)
         img = tf.image.resize_images(img, [72,64])
@@ -59,6 +59,7 @@ if __name__ == "__main__":
     model_dir = "../models/" + inp[1] + '/my-model.ckpt' + inp[2]
 
     with tf.Session() as sess:
+        gm = get_img(sess, rev=True)# 色反転の時はTrue
         # Initialize the variables (i.e. assign their default value)
         init = tf.global_variables_initializer()
         sess.run(init)
@@ -73,9 +74,6 @@ if __name__ == "__main__":
         decoder = tf.get_collection("en_decoder")[0]
         print(decoder)
         print("done.")
-        gm = get_img(sess, rev=True)# 色反転の時はTrue
-        init = tf.global_variables_initializer()
-        sess.run(init)
 
         print("prepare data...")
         if inp[3] == "cae":
@@ -97,6 +95,9 @@ if __name__ == "__main__":
             g = sess.run(decoder, feed_dict={ph_X: batch_x})
 
             # Display original images
+            loss = tf.reduce_mean(tf.pow(g - batch_x, 2))
+            print(sess.run(loss))
+            print(loss)
             for j in range(n):
                 # Draw the original digits
                 changed = batch_x[j].reshape([72, 64])

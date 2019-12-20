@@ -36,7 +36,8 @@ def main():
         for j in range(NUM-1):
             # clock.tick(5)
             obj_pos=[top[0]+rate[0]*i,top[1]+rate[1]*j]
-            screen = env.obj_set(obj_pos)
+            # screen = env.obj_set(obj_pos)
+            screen = env.reset()
             if args.isSave:
                 pil_img = Image.fromarray(screen.reshape(env.rectSIZE[0],env.rectSIZE[1]))
                 pil_img = pil_img.convert("L")
