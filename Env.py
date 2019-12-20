@@ -33,6 +33,13 @@ class armEnv():
             self._is_render = _is_render
         if self._is_render : #ここでscreenを上書きすれば，resetの引数でrenderするかどうか決められる
             self.screen = pygame.display.set_mode((self.SCREEN_HEIGHT, self.SCREEN_WIDTH))
+        self.screen.fill((255, 255, 255))
+        pygame.draw.rect(self.screen, (0,0,0), Rect(self.rectPOS[0]-3, self.rectPOS[1]-3, self.rectSIZE[0]+6, self.rectSIZE[1]+6),2)
+        if self._is_render : #画面を表示するかしないか
+            pygame.display.update()
+            pygame.event.get()
+        observation = self.cutScreen()
+        return observation
 
     def obj_set(self,position):
         self.screen.fill((255, 255, 255))
